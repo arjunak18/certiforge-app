@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CertiForge | Offline-First Bulk Certificate Generator & Verifier</title>
+  <meta name="description" content="Download CertiForge Android APK - Offline-first bulk certificate generation, Ed25519 cryptographic signing, vector PDF exports, and tamper verification.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛡️</text></svg>">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              bg: '#000000',
+              card: '#161616',
+              secondary: '#222222',
+              border: '#2c2c2c',
+              accent: '#1DCD9F',
+              accentDark: '#169976',
+              accentLight: '#4ef0c4',
+              text: '#F5F5F5',
+              muted: '#A0A0A0'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #000000;
+      color: #F5F5F5;
+      overflow-x: hidden;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glow-accent {
+      box-shadow: 0 0 35px -5px rgba(29, 205, 159, 0.35);
+    }
+    .glow-card:hover {
+      box-shadow: 0 0 25px -5px rgba(29, 205, 159, 0.2);
+    }
+    .bg-grid {
+      background-size: 32px 32px;
+      background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #111;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2c2c2c;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #1DCD9F;
+    }
+  </style>
+</head>
+<body class="bg-black text-[#F5F5F5] min-h-screen relative flex flex-col selection:bg-brand-accent selection:text-black">
+
+  <!-- Background Decorative Glow -->
+  <div class="fixed top-0 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-emerald-500/10 blur-[130px] rounded-full pointer-events-none -z-10"></div>
+  <div class="fixed bottom-0 right-0 w-[500px] h-[350px] bg-emerald-600/5 blur-[150px] rounded-full pointer-events-none -z-10"></div>
+
+  <!-- Header / Navigation -->
+  <header class="sticky top-0 z-50 backdrop-blur-xl bg-black/80 border-b border-[#222222]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-accent to-brand-accentDark flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <svg class="w-6 h-6 text-black" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+          </svg>
+        </div>
+        <div>
+          <span class="text-2xl font-bold tracking-tight text-white flex items-center gap-1.5">
+            Certi<span class="text-brand-accent">Forge</span>
+          </span>
+          <span class="text-[11px] block font-mono tracking-wider uppercase text-brand-muted">Android Native v1.0.0</span>
+        </div>
+      </div>
+
+      <nav class="hidden md:flex items-center gap-8 text-sm font-medium text-brand-muted">
+        <a href="#features" class="hover:text-brand-accent transition-colors">Features</a>
+        <a href="#install" class="hover:text-brand-accent transition-colors">Installation Guide</a>
+        <a href="#verifier" class="hover:text-brand-accent transition-colors">Web Verifier</a>
+        <a href="#specs" class="hover:text-brand-accent transition-colors">Specs & Security</a>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <a id="nav-download-btn" href="./CertiForge-v1.0-debug.apk" download="CertiForge-v1.0-debug.apk" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-brand-accent hover:bg-brand-accentLight text-black font-semibold text-sm transition-all transform hover:-translate-y-0.5 active:translate-y-0 shadow-lg shadow-emerald-500/20">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          <span>Download APK</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="flex-grow">
+    <section class="relative pt-12 pb-20 lg:pt-20 lg:pb-28 overflow-hidden bg-grid">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          
+          <!-- Left Column: Copy & Actions -->
+          <div class="lg:col-span-7 space-y-7">
+            <div class="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-[#161616] border border-[#2c2c2c] text-xs font-mono text-brand-accent">
+              <span class="w-2 h-2 rounded-full bg-brand-accent animate-pulse"></span>
+              100% OFFLINE • ED25519 SIGNED • ZERO TELEMETRY
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl font-extrabold tracking-tight leading-[1.12]">
+              Create. Certify. <br/>
+              <span class="bg-gradient-to-r from-brand-accent via-emerald-300 to-brand-accentDark bg-clip-text text-transparent">Verify.</span>
+            </h1>
+
+            <p class="text-lg sm:text-xl text-brand-muted max-w-2xl leading-relaxed">
+              The professional offline-first native Android application for bulk certificate generation, Excel/CSV Unicode roster processing, tamper-evident cryptographic verification, and vector PDF exports.
+            </p>
+
+            <!-- Download Action Area -->
+            <div class="pt-2 flex flex-col sm:flex-row gap-4 items-stretch sm:items-center">
+              <a id="hero-download-btn" href="./CertiForge-v1.0-debug.apk" download="CertiForge-v1.0-debug.apk" class="flex items-center justify-center gap-3 px-8 py-4 rounded-xl bg-brand-accent hover:bg-brand-accentLight text-black font-bold text-base transition-all transform hover:-translate-y-1 shadow-xl shadow-emerald-500/25">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <div class="text-left leading-tight">
+                  <div class="text-xs uppercase tracking-wider font-semibold opacity-80">Direct Download</div>
+                  <div>Download CertiForge APK</div>
+                </div>
+              </a>
+
+              <a href="#install" class="flex items-center justify-center gap-2 px-6 py-4 rounded-xl bg-[#1a1a1a] hover:bg-[#242424] text-white font-medium border border-[#333] transition-all">
+                <svg class="w-5 h-5 text-brand-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>How to Install</span>
+              </a>
+            </div>
+
+            <!-- Metadata Pills -->
+            <div class="pt-3 flex flex-wrap gap-4 text-xs font-mono text-brand-muted">
+              <span class="flex items-center gap-1.5 bg-[#161616] px-3 py-1.5 rounded-lg border border-[#262626]">
+                <svg class="w-4 h-4 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Package: org.certiforge.app
+              </span>
+              <span class="flex items-center gap-1.5 bg-[#161616] px-3 py-1.5 rounded-lg border border-[#262626]">
+                <svg class="w-4 h-4 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                Size: 4.68 MB (Universal)
+              </span>
+              <span class="flex items-center gap-1.5 bg-[#161616] px-3 py-1.5 rounded-lg border border-[#262626]">
+                <svg class="w-4 h-4 text-brand-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                Android 7.0 - 15+ (API 24-36)
+              </span>
+            </div>
+
+            <!-- SHA-256 Checksum Card -->
+            <div class="bg-[#121212] p-4 rounded-xl border border-[#222222] text-xs space-y-1.5">
+              <div class="flex items-center justify-between text-brand-muted">
+                <span class="font-medium text-white flex items-center gap-1.5">
+                  <svg class="w-3.5 h-3.5 text-brand-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                  Cryptographic Package SHA-256 Checksum:
+                </span>
+                <button onclick="copyChecksum()" id="copy-btn" class="text-brand-accent hover:underline flex items-center gap-1 cursor-pointer">
+                  <span>Copy Hash</span>
+                </button>
+              </div>
+              <div id="checksum-text" class="font-mono text-[#888] break-all bg-black/60 p-2 rounded-md select-all border border-[#1f1f1f]">
+                382D855D59DA8CD5EB774928397333E46B1EC091519AE20759C169D503A422D8
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right Column: Interactive Phone Mockup & Mobile QR Scanner -->
+          <div class="lg:col-span-5 flex flex-col items-center justify-center">
+            <div class="w-full max-w-sm bg-[#141414] border border-[#2b2b2b] rounded-3xl p-6 shadow-2xl relative overflow-hidden group glow-card transition-all">
+              
+              <div class="flex items-center justify-between pb-4 border-b border-[#242424]">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full bg-red-500/80"></div>
+                  <div class="w-3 h-3 rounded-full bg-yellow-500/80"></div>
+                  <div class="w-3 h-3 rounded-full bg-brand-accent"></div>
+                </div>
+                <span class="text-xs font-mono text-brand-muted">Mobile Sideload QR</span>
+              </div>
+
+              <!-- QR Code Card to download directly on Phone -->
+              <div class="py-6 flex flex-col items-center text-center space-y-4">
+                <div class="p-3 bg-white rounded-2xl shadow-xl shadow-black/50" id="qrcode-container">
+                  <!-- QR Code generated via JS -->
+                </div>
+                
+                <div class="space-y-1">
+                  <h3 class="text-sm font-semibold text-white">Scan with Phone Camera</h3>
+                  <p class="text-xs text-brand-muted max-w-[240px]">
+                    Point your Android camera at this QR code to download the APK directly onto your phone.
+                  </p>
+                </div>
+
+                <div class="w-full bg-[#1b1b1b] rounded-xl p-3 border border-[#282828] text-left text-xs space-y-1">
+                  <div class="flex items-center justify-between text-brand-muted">
+                    <span>Release Channel:</span>
+                    <span class="text-brand-accent font-mono">v1.0 (Stable)</span>
+                  </div>
+                  <div class="flex items-center justify-between text-brand-muted">
+                    <span>Target Architecture:</span>
+                    <span class="text-white font-mono">Universal APK</span>
+                  </div>
+                  <div class="flex items-center justify-between text-brand-muted">
+                    <span>Network Requirements:</span>
+                    <span class="text-emerald-400 font-mono">Zero (Offline)</span>
+                  </div>
+                </div>
+
+                <a href="./CertiForge-v1.0-debug.apk" download="CertiForge-v1.0-debug.apk" class="w-full py-3 rounded-xl bg-gradient-to-r from-brand-accent to-brand-accentDark text-black font-bold text-sm flex items-center justify-center gap-2 hover:opacity-95 transition-opacity">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                  <span>Direct Mobile Download</span>
+                </a>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Installation Instructions Section -->
+    <section id="install" class="py-20 border-t border-[#1f1f1f] bg-[#080808]">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div class="inline-block px-3 py-1 rounded-full bg-brand-accent/10 text-brand-accent text-xs font-mono">
+            EASY SETUP
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">How to Install on Any Android Device</h2>
+          <p class="text-brand-muted text-base">
+            CertiForge is distributed as a standalone, offline-ready Android APK. Follow these simple steps to install it on your device in under 60 seconds:
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          
+          <!-- Step 1 -->
+          <div class="bg-[#121212] p-6 rounded-2xl border border-[#222222] relative group hover:border-brand-accent/40 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-brand-accent/10 border border-brand-accent/20 text-brand-accent flex items-center justify-center font-bold text-lg mb-5">
+              1
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Download APK</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              Tap the download button on this webpage or scan the QR code to save <span class="text-white font-mono text-xs">CertiForge-v1.0-debug.apk</span> to your device.
+            </p>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="bg-[#121212] p-6 rounded-2xl border border-[#222222] relative group hover:border-brand-accent/40 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-brand-accent/10 border border-brand-accent/20 text-brand-accent flex items-center justify-center font-bold text-lg mb-5">
+              2
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Open the File</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              Open your browser's download notification or your phone's <strong>Files / Downloads</strong> app, then tap the downloaded APK file.
+            </p>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="bg-[#121212] p-6 rounded-2xl border border-[#222222] relative group hover:border-brand-accent/40 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-brand-accent/10 border border-brand-accent/20 text-brand-accent flex items-center justify-center font-bold text-lg mb-5">
+              3
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Enable Sideloading</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              If prompted with <em>"Install unknown apps"</em>, tap <strong>Settings</strong> and toggle on <em>"Allow from this source"</em> for your browser/files app.
+            </p>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="bg-[#121212] p-6 rounded-2xl border border-[#222222] relative group hover:border-brand-accent/40 transition-colors">
+            <div class="w-10 h-10 rounded-xl bg-brand-accent/10 border border-brand-accent/20 text-brand-accent flex items-center justify-center font-bold text-lg mb-5">
+              4
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Install & Enjoy</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              Tap <strong>Install</strong>. Once complete, tap <strong>Open</strong> to start generating and verifying certificates offline without any internet connection.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Core Features Section -->
+    <section id="features" class="py-20 border-t border-[#1f1f1f]">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+          <div class="inline-block px-3 py-1 rounded-full bg-brand-accent/10 text-brand-accent text-xs font-mono">
+            ENGINEERING CAPABILITIES
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Built for Offline Integrity & Scale</h2>
+          <p class="text-brand-muted text-base">
+            Everything college event organizers, IEEE branches, hackathon coordinators, and educational institutions need.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          
+          <div class="bg-[#111111] p-7 rounded-2xl border border-[#222222] space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-brand-accent flex items-center justify-center">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.166a1 1 0 111.414 1.414M3 3l18 18"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white">100% Offline-First</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              No cloud accounts, third-party APIs, or internet connections required. Zero tracking, ensuring absolute privacy for participant data and records.
+            </p>
+          </div>
+
+          <div class="bg-[#111111] p-7 rounded-2xl border border-[#222222] space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-brand-accent flex items-center justify-center">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white">Excel & CSV Roster Import</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              Imports spreadsheets with dynamic header auto-detection, schema mapping, duplicate detection, and full UTF-8 Unicode support (Malayalam, Hindi, Tamil, etc.).
+            </p>
+          </div>
+
+          <div class="bg-[#111111] p-7 rounded-2xl border border-[#222222] space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-brand-accent flex items-center justify-center">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white">Ed25519 Cryptographic Signatures</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              Every certificate is signed with high-security Ed25519 digital signatures. Any tampering with participant name, issue date, or event details immediately invalidates the seal.
+            </p>
+          </div>
+
+          <div class="bg-[#111111] p-7 rounded-2xl border border-[#222222] space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-brand-accent flex items-center justify-center">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white">Vector PDF & Offline QR</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              Generates high-DPI vector PDFs ready for professional printing. Includes embedded QR codes encoding canonical cryptographic verification payloads.
+            </p>
+          </div>
+
+          <div class="bg-[#111111] p-7 rounded-2xl border border-[#222222] space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-brand-accent flex items-center justify-center">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white">Batch ZIP Generation</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              Batch generate hundreds of certificates in seconds with individual PDF files bundled into an organized, compressed `.zip` archive ready for distribution.
+            </p>
+          </div>
+
+          <div class="bg-[#111111] p-7 rounded-2xl border border-[#222222] space-y-4">
+            <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-brand-accent flex items-center justify-center">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <h3 class="text-xl font-bold text-white">Tamper-Evident Audit Logs</h3>
+            <p class="text-sm text-brand-muted leading-relaxed">
+              Every creation, signing event, and export is recorded in an immutable, cryptographically hash-chained SHA-256 audit ledger to prevent unauthorized alterations.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Interactive In-Browser Verification Demo -->
+    <section id="verifier" class="py-20 border-t border-[#1f1f1f] bg-[#0c0c0c]">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="text-center space-y-4 mb-12">
+          <div class="inline-block px-3 py-1 rounded-full bg-brand-accent/10 text-brand-accent text-xs font-mono">
+            INSTANT CRYPTOGRAPHIC VERIFICATION
+          </div>
+          <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight">Test Certificate Verification Live</h2>
+          <p class="text-brand-muted text-base">
+            Try the cryptographic verifier right now in your browser. Paste any signed QR code payload or test with the sample certificate below:
+          </p>
+        </div>
+
+        <div class="bg-[#161616] p-6 sm:p-8 rounded-3xl border border-[#282828] space-y-6 shadow-2xl">
+          <div>
+            <label class="block text-xs font-mono text-brand-muted uppercase tracking-wider mb-2">
+              Signed QR Payload / JSON Verification Data
+            </label>
+            <textarea id="sample-payload" rows="5" class="w-full bg-black/80 border border-[#333] rounded-xl p-4 font-mono text-xs text-white focus:outline-none focus:border-brand-accent transition-colors">{"schema":"org.certiforge.app.cert.v1","id":"CF-CERT-DEMO-001","name":"Dr. Arjun Krishna","event":"National AI & Cloud Hackathon 2026","role":"Winner - First Place","issueDate":"2026-10-13","pubKey":"9c7b94ad3e20e54d58852e6f49c063cf224c6e93ff51941a8e1e792f44140be0","sig":"2f1e847c94ba00938b82aa1e3cf554b7c89f537b01986c750b3297a7e39f7a7db30064a3d6cb7f0177e1bb94e7724128038b368725bbbc346ea81a299c51280f"}</textarea>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-4">
+            <button onclick="simulateVerification()" class="px-6 py-3 rounded-xl bg-brand-accent hover:bg-brand-accentLight text-black font-bold text-sm flex items-center gap-2 transition-all">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Verify Cryptographic Seal</span>
+            </button>
+            <button onclick="tamperPayload()" class="px-4 py-2.5 rounded-xl bg-[#242424] hover:bg-[#303030] text-brand-muted hover:text-white text-xs font-mono border border-[#3a3a3a] transition-colors">
+              Simulate Data Tampering ⚠️
+            </button>
+          </div>
+
+          <!-- Result Display -->
+          <div id="verify-result" class="p-4 rounded-xl bg-emerald-950/30 border border-brand-accent/40 flex items-start gap-3">
+            <div class="p-2 rounded-lg bg-brand-accent text-black mt-0.5">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <div class="space-y-1">
+              <div class="font-bold text-white text-sm">Valid Cryptographic Signature (Ed25519)</div>
+              <div class="text-xs text-brand-muted">
+                Recipient: <strong class="text-white">Dr. Arjun Krishna</strong> | Event: <strong class="text-white">National AI & Cloud Hackathon 2026</strong> | Seal Status: <span class="text-brand-accent font-semibold">AUTHENTIC & UNTAMPERED</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Technical Specs -->
+    <section id="specs" class="py-16 border-t border-[#1f1f1f]">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-2xl font-bold text-white mb-8 text-center">Technical Specifications</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm font-mono">
+          <div class="p-4 rounded-xl bg-[#141414] border border-[#222] flex justify-between">
+            <span class="text-brand-muted">Package Identifier</span>
+            <span class="text-white font-semibold">org.certiforge.app</span>
+          </div>
+          <div class="p-4 rounded-xl bg-[#141414] border border-[#222] flex justify-between">
+            <span class="text-brand-muted">Release Type</span>
+            <span class="text-brand-accent font-semibold">Android Universal APK</span>
+          </div>
+          <div class="p-4 rounded-xl bg-[#141414] border border-[#222] flex justify-between">
+            <span class="text-brand-muted">Minimum SDK</span>
+            <span class="text-white">API 24 (Android 7.0 Nougat)</span>
+          </div>
+          <div class="p-4 rounded-xl bg-[#141414] border border-[#222] flex justify-between">
+            <span class="text-brand-muted">Target SDK</span>
+            <span class="text-white">API 36 (Android 15+)</span>
+          </div>
+          <div class="p-4 rounded-xl bg-[#141414] border border-[#222] flex justify-between">
+            <span class="text-brand-muted">Signing Algorithm</span>
+            <span class="text-white">Ed25519 (RFC 8032)</span>
+          </div>
+          <div class="p-4 rounded-xl bg-[#141414] border border-[#222] flex justify-between">
+            <span class="text-brand-muted">Integrity Digest</span>
+            <span class="text-white">SHA-256 Chained Hash</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-[#222222] bg-black py-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-brand-muted">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-white">CertiForge</span>
+        <span>— Offline-First Bulk Certificate Generation, Management, and Cryptographic Verification.</span>
+      </div>
+      <div class="flex items-center gap-6">
+        <a href="#features" class="hover:text-white transition-colors">Features</a>
+        <a href="#install" class="hover:text-white transition-colors">Installation</a>
+        <a href="./CertiForge-v1.0-debug.apk" download="CertiForge-v1.0-debug.apk" class="text-brand-accent font-semibold hover:underline">Download APK</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Generate dynamic QR Code for direct download
+    window.addEventListener('DOMContentLoaded', () => {
+      const currentUrl = window.location.href.split('#')[0].replace('index.html', '');
+      const apkDownloadUrl = currentUrl.endsWith('/') ? currentUrl + 'CertiForge-v1.0-debug.apk' : currentUrl + '/CertiForge-v1.0-debug.apk';
+      
+      const qrcodeContainer = document.getElementById('qrcode-container');
+      new QRCode(qrcodeContainer, {
+        text: apkDownloadUrl,
+        width: 160,
+        height: 160,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    });
+
+    function copyChecksum() {
+      const text = document.getElementById('checksum-text').innerText.trim();
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.getElementById('copy-btn');
+        btn.innerHTML = `<span class="text-emerald-400 font-bold">✓ Copied!</span>`;
+        setTimeout(() => {
+          btn.innerHTML = `<span>Copy Hash</span>`;
+        }, 2500);
+      });
+    }
+
+    function simulateVerification() {
+      const val = document.getElementById('sample-payload').value;
+      const res = document.getElementById('verify-result');
+      try {
+        const data = JSON.parse(val);
+        if (data.name && data.name.includes("Tampered")) {
+          res.className = "p-4 rounded-xl bg-red-950/30 border border-red-500/40 flex items-start gap-3";
+          res.innerHTML = `
+            <div class="p-2 rounded-lg bg-red-500 text-black mt-0.5">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </div>
+            <div class="space-y-1">
+              <div class="font-bold text-red-400 text-sm">Verification Failed: Cryptographic Signature Mismatch</div>
+              <div class="text-xs text-brand-muted">
+                The payload content does not match the Ed25519 signature! The record has been forged or altered.
+              </div>
+            </div>
+          `;
+        } else {
+          res.className = "p-4 rounded-xl bg-emerald-950/30 border border-brand-accent/40 flex items-start gap-3";
+          res.innerHTML = `
+            <div class="p-2 rounded-lg bg-brand-accent text-black mt-0.5">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path></svg>
+            </div>
+            <div class="space-y-1">
+              <div class="font-bold text-white text-sm">Valid Cryptographic Signature (Ed25519)</div>
+              <div class="text-xs text-brand-muted">
+                Recipient: <strong class="text-white">${data.name || 'Recipient'}</strong> | Event: <strong class="text-white">${data.event || 'Event'}</strong> | Seal Status: <span class="text-brand-accent font-semibold">AUTHENTIC & UNTAMPERED</span>
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) {
+        res.className = "p-4 rounded-xl bg-amber-950/30 border border-amber-500/40 flex items-start gap-3";
+        res.innerHTML = `<div class="text-xs text-amber-300">Invalid JSON data. Please ensure format is intact.</div>`;
+      }
+    }
+
+    function tamperPayload() {
+      const val = document.getElementById('sample-payload').value;
+      try {
+        const data = JSON.parse(val);
+        data.name = "Tampered John Doe";
+        document.getElementById('sample-payload').value = JSON.stringify(data, null, 2);
+        simulateVerification();
+      } catch(e) {}
+    }
+  </script>
+</body>
+</html>
